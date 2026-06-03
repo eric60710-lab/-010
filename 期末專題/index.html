@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>毛孩地圖 - 流浪動物關懷與通報平台</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Leaflet Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <i data-lucide="paw-print"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>毛孩地圖</h1>
+                    <span>Stray Care Map</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="#dashboard" class="nav-item active" data-target="dashboard-section">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>首頁儀表板</span>
+                </a>
+                <a href="#map" class="nav-item" data-target="map-section">
+                    <i data-lucide="map"></i>
+                    <span>互動地圖</span>
+                </a>
+                <a href="#gallery" class="nav-item" data-target="gallery-section">
+                    <i data-lucide="image"></i>
+                    <span>通報名錄牆</span>
+                </a>
+                <a href="#report" class="nav-item" data-target="report-section">
+                    <i data-lucide="plus-circle"></i>
+                    <span>即時通報</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-status">
+                    <div class="status-indicator online"></div>
+                    <span>已連線至本地資料庫</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+
+            <!-- Section 1: Dashboard -->
+            <section id="dashboard-section" class="content-section active">
+                <header class="section-header">
+                    <div class="header-title">
+                        <h2>首頁儀表板</h2>
+                        <p>歡迎來到流浪動物關懷與通報平台，讓我們一起守護街頭的毛孩。</p>
+                    </div>
+                </header>
+
+                <!-- Stat Cards Row -->
+                <div class="stats-grid">
+                    <div class="stat-card total">
+                        <div class="stat-icon">
+                            <i data-lucide="activity"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>累計通報件數</h3>
+                            <p class="stat-value" id="stat-total">0</p>
+                            <span class="stat-desc">所有歷史通報記錄</span>
+                        </div>
+                    </div>
+                    <div class="stat-card dogs">
+                        <div class="stat-icon">
+                            <i data-lucide="dog"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>流浪狗數量</h3>
+                            <p class="stat-value" id="stat-dogs">0</p>
+                            <span class="stat-desc">已登記的犬隻總數</span>
+                        </div>
+                    </div>
+                    <div class="stat-card cats">
+                        <div class="stat-icon">
+                            <i data-lucide="cat"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>流浪貓數量</h3>
+                            <p class="stat-value" id="stat-cats">0</p>
+                            <span class="stat-desc">已登記的貓咪總數</span>
+                        </div>
+                    </div>
+                    <div class="stat-card rescued">
+                        <div class="stat-icon">
+                            <i data-lucide="heart"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>已協助安置</h3>
+                            <p class="stat-value" id="stat-rescued">0</p>
+                            <span class="stat-desc" id="stat-rescue-rate">安置率: 0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Content Details -->
+                <div class="dashboard-body">
+                    <div class="dashboard-left">
+                        <div class="card banner-card">
+                            <div class="banner-content">
+                                <h3>看見街頭毛孩，動動手指即刻通報！</h3>
+                                <p>透過本平台，您可以精確標記流浪動物的位置，上傳現場照片，讓動保團體與熱心志工能更有效率地進行救援、結紮 (TNR) 或安置。</p>
+                                <button class="btn btn-primary" onclick="switchSection('report-section')">
+                                    <i data-lucide="plus"></i> 立即通報
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="card recent-reports-card">
+                            <div class="card-header">
+                                <h3><i data-lucide="clock"></i> 最新通報動態</h3>
+                                <a href="#gallery" class="view-all" onclick="switchSection('gallery-section')">查看全部</a>
+                            </div>
+                            <div class="recent-list" id="recent-reports-container">
+                                <!-- Dynamic recent items -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-right">
+                        <div class="card status-chart-card">
+                            <h3><i data-lucide="pie-chart"></i> 流浪動物狀態統計</h3>
+                            <div class="chart-container">
+                                <div class="custom-pie-chart" id="status-pie-chart">
+                                    <div class="pie-slice" id="slice-pending"></div>
+                                    <div class="pie-slice" id="slice-monitoring"></div>
+                                    <div class="pie-slice" id="slice-rescued"></div>
+                                    <div class="pie-center">
+                                        <span id="chart-center-val">0</span>
+                                        <span>總隻數</span>
+                                    </div>
+                                </div>
+                                <div class="chart-legend">
+                                    <div class="legend-item">
+                                        <span class="dot pending"></span>
+                                        <span>待救援 (Pending)</span>
+                                        <strong id="legend-pending-count">0</strong>
+                                    </div>
+                                    <div class="legend-item">
+                                        <span class="dot monitoring"></span>
+                                        <span>觀察中 (Monitoring)</span>
+                                        <strong id="legend-monitoring-count">0</strong>
+                                    </div>
+                                    <div class="legend-item">
+                                        <span class="dot rescued"></span>
+                                        <span>已安置/結紮 (Rescued)</span>
+                                        <strong id="legend-rescued-count">0</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card tips-card">
+                            <h3><i data-lucide="info"></i> 遇見流浪動物處理指引</h3>
+                            <ul class="tips-list">
+                                <li>
+                                    <span class="tip-num">1</span>
+                                    <div class="tip-content">
+                                        <strong>保持距離與冷靜</strong>
+                                        <p>避免大聲喧嘩或做出突兀動作，以防動物因驚嚇而防衛性攻擊。</p>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="tip-num">2</span>
+                                    <div class="tip-content">
+                                        <strong>觀察健康與性情</strong>
+                                        <p>查看是否有外傷、項圈或剪耳標記（代表已結紮），並評估是否親人。</p>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="tip-num">3</span>
+                                    <div class="tip-content">
+                                        <strong>拍下照片並標記位置</strong>
+                                        <p>利用本網站的通報功能，上傳照片並在地圖上點擊標記其精確位置。</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 2: Interactive Map -->
+            <section id="map-section" class="content-section">
+                <header class="section-header map-header">
+                    <div class="header-title">
+                        <h2>流浪動物互動地圖</h2>
+                        <p>點擊地圖上的地標查看流浪動物的詳細資訊；若要通報，可切換至「即時通報」頁面並點擊地圖選擇位置。</p>
+                    </div>
+                    <div class="map-filters">
+                        <select id="map-filter-type" class="form-select-sm">
+                            <option value="all">所有物種 (全部)</option>
+                            <option value="dog">僅顯示狗狗</option>
+                            <option value="cat">僅顯示貓咪</option>
+                        </select>
+                        <select id="map-filter-status" class="form-select-sm">
+                            <option value="all">所有狀態</option>
+                            <option value="待救援">待救援</option>
+                            <option value="觀察中">觀察中</option>
+                            <option value="已救援">已安置/結紮</option>
+                        </select>
+                    </div>
+                </header>
+
+                <div class="map-wrapper">
+                    <div id="main-map"></div>
+                    <div class="map-side-panel">
+                        <div class="side-panel-header">
+                            <h3>區域毛孩名單 (<span id="map-sidebar-count">0</span>)</h3>
+                        </div>
+                        <div class="map-sidebar-list" id="map-sidebar-list-container">
+                            <!-- Dynamic sidebar items -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3: Gallery & Cards -->
+            <section id="gallery-section" class="content-section">
+                <header class="section-header">
+                    <div class="header-title">
+                        <h2>通報名錄牆</h2>
+                        <p>瀏覽所有熱心市民上傳的流浪動物照片與即時狀況，協助推廣認養或搜救。</p>
+                    </div>
+                </header>
+
+                <!-- Filter Toolbar -->
+                <div class="filter-toolbar">
+                    <div class="search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="gallery-search" placeholder="搜尋地點或描述...">
+                    </div>
+                    <div class="filter-groups">
+                        <div class="filter-btn-group" id="filter-type-group">
+                            <button class="filter-btn active" data-filter-type="all">全部</button>
+                            <button class="filter-btn" data-filter-type="dog"><i data-lucide="dog"></i> 狗狗</button>
+                            <button class="filter-btn" data-filter-type="cat"><i data-lucide="cat"></i> 貓咪</button>
+                        </div>
+
+                        <div class="filter-btn-group" id="filter-status-group">
+                            <button class="filter-btn active" data-filter-status="all">全部狀態</button>
+                            <button class="filter-btn" data-filter-status="待救援">待救援</button>
+                            <button class="filter-btn" data-filter-status="觀察中">觀察中</button>
+                            <button class="filter-btn" data-filter-status="已救援">已安置</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cards Grid -->
+                <div class="cards-grid" id="gallery-cards-container">
+                    <!-- Dynamic cards -->
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state hidden" id="gallery-empty-state">
+                    <i data-lucide="folder-open"></i>
+                    <h3>沒有找到符合篩選條件的流浪動物</h3>
+                    <p>試著調整篩選條件，或建立一筆新的通報！</p>
+                </div>
+            </section>
+
+            <!-- Section 4: Report Form -->
+            <section id="report-section" class="content-section">
+                <header class="section-header">
+                    <div class="header-title">
+                        <h2>即時通報系統</h2>
+                        <p>如果您在街頭看見需要關注的流浪動物，請填寫下方表單。您可以在右側地圖上點擊以精確標示位置。</p>
+                    </div>
+                </header>
+
+                <div class="report-layout">
+                    <div class="card form-card">
+                        <form id="report-form">
+                            <div class="form-row">
+                                <div class="form-group col-6">
+                                    <label for="animal-type">動物種類 <span class="required">*</span></label>
+                                    <div class="radio-card-group">
+                                        <label class="radio-card">
+                                            <input type="radio" name="animal-type" value="dog" checked>
+                                            <div class="radio-card-content">
+                                                <i data-lucide="dog"></i>
+                                                <span>狗 (Dog)</span>
+                                            </div>
+                                        </label>
+                                        <label class="radio-card">
+                                            <input type="radio" name="animal-type" value="cat">
+                                            <div class="radio-card-content">
+                                                <i data-lucide="cat"></i>
+                                                <span>貓 (Cat)</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group col-6">
+                                    <label for="animal-count">估計數量 <span class="required">*</span></label>
+                                    <div class="quantity-input-wrapper">
+                                        <button type="button" class="qty-btn" id="qty-minus">-</button>
+                                        <input type="number" id="animal-count" value="1" min="1" max="20" required>
+                                        <button type="button" class="qty-btn" id="qty-plus">+</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="animal-status">健康與救援狀態 <span class="required">*</span></label>
+                                <select id="animal-status" required class="form-select">
+                                    <option value="待救援">待救援 (生病、受傷、處境危險、年幼)</option>
+                                    <option value="觀察中" selected>觀察中 (健康狀況尚可，固定在此出沒)</option>
+                                    <option value="已救援">已安置/已結紮 (已被帶離現場或完成 TNR)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group col-6">
+                                    <label for="report-lat">緯度 (Latitude) <span class="required">*</span></label>
+                                    <input type="number" step="any" id="report-lat" placeholder="25.033" required
+                                        readonly>
+                                </div>
+                                <div class="form-group col-6">
+                                    <label for="report-lng">經度 (Longitude) <span class="required">*</span></label>
+                                    <input type="number" step="any" id="report-lng" placeholder="121.565" required
+                                        readonly>
+                                </div>
+                            </div>
+                            <div class="form-tip">
+                                <i data-lucide="info"></i> 提示：請在右側地圖上直接點擊，系統會自動帶入經緯度。
+                            </div>
+
+                            <div class="form-group">
+                                <label for="report-address">出沒位置描述 <span class="required">*</span></label>
+                                <input type="text" id="report-address" placeholder="例如：大安森林公園建國南路側長椅旁，或輸入地址..." required
+                                    class="form-input">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="photo-select">照片選擇 <span class="required">*</span></label>
+                                <div class="photo-selector-grid">
+                                    <!-- Options to select generated seed photos easily -->
+                                    <label class="photo-option">
+                                        <input type="radio" name="preset-photo" value="images/stray_dog_1.png" checked>
+                                        <img src="images/stray_dog_1.png" alt="狗狗 1">
+                                        <span class="photo-label">狗狗 1</span>
+                                    </label>
+                                    <label class="photo-option">
+                                        <input type="radio" name="preset-photo" value="images/stray_cat_1.png">
+                                        <img src="images/stray_cat_1.png" alt="貓咪 1">
+                                        <span class="photo-label">貓咪 1</span>
+                                    </label>
+                                    <label class="photo-option">
+                                        <input type="radio" name="preset-photo" value="images/stray_dog_2.png">
+                                        <img src="images/stray_dog_2.png" alt="狗狗 2">
+                                        <span class="photo-label">狗狗 2</span>
+                                    </label>
+                                    <label class="photo-option">
+                                        <input type="radio" name="preset-photo" value="images/stray_cat_2.png">
+                                        <img src="images/stray_cat_2.png" alt="貓咪 2">
+                                        <span class="photo-label">貓咪 2</span>
+                                    </label>
+                                    <label class="photo-option upload-trigger">
+                                        <input type="radio" name="preset-photo" value="upload"
+                                            id="radio-upload-trigger">
+                                        <div class="upload-placeholder">
+                                            <i data-lucide="upload"></i>
+                                            <span>上傳照片</span>
+                                        </div>
+                                    </label>
+                                </div>
+                                <input type="file" id="custom-photo-file" accept="image/*" class="hidden-file-input">
+                                <div id="upload-preview-container" class="hidden">
+                                    <img id="upload-preview-img" src="" alt="預覽">
+                                    <button type="button" class="btn-clear-img" id="btn-clear-uploaded">移除上傳</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="animal-desc">動物特徵與現場描述</label>
+                                <textarea id="animal-desc" rows="4"
+                                    placeholder="請描述毛孩的花色特徵、性情（親人/怕人/具防備心）、是否受傷、是否有項圈等資訊..."
+                                    class="form-textarea"></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i data-lucide="send"></i> 送出通報
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="card map-selection-card">
+                        <h3><i data-lucide="map-pin"></i> 選擇通報位置</h3>
+                        <p>請在下方地圖上點擊滑鼠，設定流浪動物出沒的精確地點。</p>
+                        <div id="selection-map"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Animal Detail Modal -->
+    <div class="modal-backdrop hidden" id="detail-modal">
+        <div class="modal-content">
+            <button class="modal-close" id="modal-close-btn">
+                <i data-lucide="x"></i>
+            </button>
+            <div class="modal-body">
+                <div class="modal-left">
+                    <img id="modal-img" src="" alt="動物照片">
+                    <div class="modal-badge-container">
+                        <span class="badge" id="modal-species-badge">狗狗</span>
+                        <span class="badge" id="modal-status-badge">待救援</span>
+                    </div>
+                </div>
+                <div class="modal-right">
+                    <div class="modal-header-info">
+                        <h3 id="modal-title">台北市大安區流浪犬</h3>
+                        <span class="modal-time" id="modal-time-text"><i data-lucide="calendar"></i>
+                            通報時間：2026-06-03</span>
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">出沒數量</span>
+                            <span class="info-value" id="modal-count-text">1 隻</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">精確經緯度</span>
+                            <span class="info-value" id="modal-coords-text">25.033, 121.565</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-desc-box">
+                        <h4><i data-lucide="file-text"></i> 詳細描述與特徵</h4>
+                        <p id="modal-desc-text">一隻黃色大狗，脖子上有綠色項圈，很溫馴但看起來有點虛弱。在大安森林公園長椅下睡覺。</p>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button class="btn btn-primary" id="modal-locate-btn">
+                            <i data-lucide="map-pin"></i> 在地圖上定位
+                        </button>
+                        <button class="btn btn-outline" id="modal-status-toggle-btn">
+                            <i data-lucide="check-square"></i> 更新狀態為已安置
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden">
+        <i data-lucide="info" id="toast-icon"></i>
+        <span id="toast-msg">通報成功！</span>
+    </div>
+
+    <!-- Leaflet Map JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Core Application Logic -->
+    <script src="app.js"></script>
+</body>
+
+</html>
